@@ -84,11 +84,11 @@
 
 ; Observe player 1's board with a specified argument
 (define getp1board
-  (lambda (arg) (obs p1l arg (deref p1board))))
+  (lambda (arg) (obs p2l arg (obs p1l arg (deref p1board)))))
 
 ; Observe player 2's board with a specified argument
 (define getp2board
-  (lambda (arg) (obs p2l arg (deref p2board))))
+  (lambda (arg) (obs p1l arg (obs p2l arg (deref p2board)))))
 
 ; Render Player 1's board to HTML
 (define player1board
@@ -109,7 +109,7 @@
 (define makep1strike 
   (lambda (x y)
     (begin
-      (cdr (obs p2l "player2" (mark-hit p2board x y))))))
+      (cdr (obs p1l #f (obs p2l "player2" (mark-hit p2board x y)))))))
 
 ; Make a strike from Player 1 to 2
 (define p1strike
@@ -125,7 +125,18 @@
 
 (define makep2strike 
   (lambda (x y)
-    (cdr (obs p1l "player1" (mark-hit p1board x y)))))
+    (let ()
+        (print "Before: ")
+        (println p1board)
+      (let ([res (cdr (obs p2l #f (obs p1l "player1" (mark-hit p1board x y))))])
+        (print "After: ")
+        (println p1board)
+        res
+        )
+      )
+    )
+  )
+
 
 ; Make a strike from Player 2 to 1
 (define p2strike
@@ -165,12 +176,50 @@
         (for-all-rows 0)
         str))))
 
+
+                             
+(define declassify-p1-board
+  (lambda ()
+    (let ()
+      ;(print "p1l: ")
+      ;(println p1l)
+      ;(print "p2l: ")
+      ;(println p2l)
+      ;(print "before: ")
+      ;(println p1board)
+      (ref-set! p1board (fac-declassify p2l p1l (deref p1board)))
+      ;(print "after: ")
+      ;(println p1board)
+      ;p1board
+      )
+    )
+  )
+
+(define declassify-p2-board (lambda ()
+  (ref-set! p2board (fac-declassify p1l p2l (deref p2board)))
+  )
+  )
+
+(define p1declassify
+  (ext-lambda (request name)
+              (let ()
+                (declassify-p1-board)
+                (http-response "<h1>Declassified Player 1's board</h1>"))))
+
+(define p2declassify
+  (ext-lambda (request name)
+              (let ()
+                (declassify-p2-board)
+                (http-response "<h1>Declassified Player 2's board</h1>"))))
+
 (define-values (dispatch generate-url)
   (dispatch-rules
     [("player1" (string-arg)) player1board]
     [("player2" (string-arg)) player2board]
     [("player1strike" (string-arg)) p1strike]
     [("player2strike" (string-arg)) p2strike]
+    [("player1reveal" (string-arg)) p1declassify]
+    [("player2reveal" (string-arg)) p2declassify]
     ;; [else
     ;;  (http-response "<p>Navigate to /player1/player1 to see player 1's board, or /player2/player2 to see 2's board. Make strikes with /player1strike/x,y or same or 2.</p>")]
     ))
