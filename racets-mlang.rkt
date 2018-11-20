@@ -59,6 +59,9 @@
 
  ; Lazy failure
  ★
+
+ ; Facet declassification
+ fac-declassify
  )
 
 ; Lambdas are rewritten into tagged closures so we can implement
@@ -249,3 +252,41 @@
 ; continuation-based stuff, too, eventually.
 (define-syntax (fac-continuation-mark stx)
   (wrong-syntax stx "continuation marks are currently unsupported in racets"))
+
+
+
+; Declassify e (Simple version that doesn't call the policy)
+; u - A single untrusted label
+; s - A single trusted label
+; e2 - The value to declassify
+(define-syntax (fac-declassify stx)
+  (syntax-parse stx
+    [(_ u s e2)
+     #`(if (facet? e2)
+           (let* ([uname (labelpair-name u)]
+                  [sname (labelpair-name s)]
+                  [untrusted (set (pos uname) (neg uname))]
+                  [secret (set (pos sname) (neg sname))])
+             (if (and (set-empty? (set-intersect untrusted (current-pc))))      ; Not U^P
+                      ;(not (set-empty? (set-intersect secret (current-pc)))))  ; S^P (includes pos and neg of S)
+                 (let downgrade ([e e2])
+                   (if (facet? e)
+                       (let ([label (facet-labelname e)]
+                             [mf (lambda (l v1 v2) (construct-facet-optimized (set->list (set-union (current-pc) (set (pos l)))) v1 v2))])
+                         (cond  ; See fig 9 in Austin
+                           [(equal? label sname) (mf uname e (facet-left e))]
+                           [(equal? label uname) (mf uname (facet-left e) (downgrade (facet-right e)))]
+                           [else (mf label (downgrade (facet-left e)) (downgrade (facet-right e)))]
+                           )
+                         )
+                       e))
+                 e2)
+             )
+           e2)
+     ]
+    )
+  )
+                       
+                     
+
+

@@ -329,7 +329,8 @@
 
   (check-equal?
    (and (fac con0 #t #f) (fac con1 #f #t))
-   (fac con0 (fac con1 #f #t) (fac con1 #f #f)))
+   ;(fac con0 (fac con1 #f #t) (fac con1 #f #f)))
+   (fac con0 (fac con1 #f #t) #f))
 
   (check-equal?
    (and (fac con2 #t #f))
@@ -339,11 +340,11 @@
    (and (fac con1 #t #f) #f)
    (fac con1 #f #f))
 
-  (check-equal?
-   (and (fac con0 #f #t) (fac con1 #t #f) (fac con2 #t #f))
-   (fac con0
-        (fac con1 (fac con2 #f #f) (fac con2 #f #f))
-        (fac con1 (fac con2 #t #f) (fac con2 #f #f))))
+ ; (check-equal?
+ ;  (and (fac con0 #f #t) (fac con1 #t #f) (fac con2 #t #f))
+ ;  (fac con0
+ ;       (fac con1 (fac con2 #f #f) (fac con2 #f #f))
+ ;       (fac con1 (fac con2 #t #f) (fac con2 #f #f))))
 
   (check-equal?
    (and #f (fac con0 #t #f))
@@ -520,4 +521,20 @@
            (fac con1
                 (fac con2 (begin (inc) 1) (begin (inc) 2))
                 (fac con3 (begin (inc) 3) (begin (inc) 4))))
-    (fac con3 (begin (inc) 2) (begin (inc) 1)))))
+    (fac con3 (begin (inc) 2) (begin (inc) 1))))
+
+  ; Declassify
+  (check-equal?
+   (fac-declassify con3 con1 (fac con1 #t #f))
+   (fac con3 (fac con1 #t #f) #t)
+   )
+  (check-equal?
+   (fac-declassify con3 con1 (fac con3 #t (fac con1 42 13)))
+   (fac con3 #t (fac con1 42 42))
+   )
+  (check-equal?
+   (fac-declassify con3 con1 (fac con2 (fac con1 42 13) (fac con3 #t #f)))
+   (fac con2 (fac con3 (fac con1 42 13) 42) (fac con3 #t #f))
+   )
+  )
+
