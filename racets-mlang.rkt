@@ -62,6 +62,8 @@
 
  ; Facet declassification
  fac-declassify
+
+ fac-force-declassify
  )
 
 ; Lambdas are rewritten into tagged closures so we can implement
@@ -286,6 +288,23 @@
      ]
     )
   )
+
+; Forcefully declassify val
+(define-syntax (fac-force-declassify stx)
+  (syntax-parse stx
+    [(_ pol val)
+     #`(let ([polName (labelpair-name pol)])
+         (let downgrade ([e val])
+           (if (facet? e)
+               (let ([label (facet-labelname e)]
+                     [mf (lambda (l v1 v2) (construct-facet-optimized (set->list (set-union (current-pc) (set (pos l)))) v1 v2))])
+                 (if (equal? label polName)
+                     (downgrade (facet-left e))
+                     (mf label (downgrade (facet-left e)) (downgrade (facet-right e)))
+                     )
+                 )
+               e
+               )))]))
                        
                      
 

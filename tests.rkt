@@ -536,5 +536,25 @@
    (fac-declassify con3 con1 (fac con2 (fac con1 42 13) (fac con3 #t #f)))
    (fac con2 (fac con3 (fac con1 42 13) 42) (fac con3 #t #f))
    )
-  )
 
+  ; Force declassify
+  (check-equal?
+   (fac-force-declassify con1 42)
+   42
+   )
+  (check-equal?
+   (fac-force-declassify con1 (fac con1 42 123))
+   42
+  )
+  (check-equal?
+   (fac-force-declassify con2 (fac con1 42 123))
+   (fac con1 42 123)  
+  )
+  (check-equal?
+   (fac-force-declassify con1 (fac con2 (fac con1 42 123) (fac con3 #t #f)))
+   (fac con2 42 (fac con3 #t #f))
+   )
+                         
+
+  
+  )
